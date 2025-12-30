@@ -15,7 +15,7 @@
   </property>
   <property name="styleSheet">
    <string notr="true">
-/* 全局样式 */
+/* --- 全局样式：强制黑字，使用系统默认背景 --- */
 QWidget {
     color: black;
     font-family: &quot;Microsoft YaHei&quot;;
@@ -27,6 +27,7 @@ QSplitter::handle {
     background-color: transparent;
 }
 
+/* GroupBox 样式 */
 QGroupBox {
     font-weight: bold;
     border: 1px solid gray;
@@ -37,7 +38,16 @@ QGroupBox::title {
     left: 10px;
     padding: 0 3px;
 }
-QLineEdit { padding: 2px; }
+
+/* --- 输入框/下拉框：白底黑字 --- */
+QLineEdit, QComboBox, QTextEdit {
+    background-color: white;
+    color: black;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px;
+}
+
 QLabel { padding-right: 5px; }
    </string>
   </property>
@@ -346,17 +356,7 @@ QLabel { padding-right: 5px; }
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_ChartTab">
            <item>
-            <widget class="QWidget" name="chartContainer" native="true">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_ChartTools">
+            <layout class="QHBoxLayout" name="horizontalLayout_TopTools">
              <item>
               <widget class="QCheckBox" name="checkShowPoints">
                <property name="text">
@@ -365,28 +365,7 @@ QLabel { padding-right: 5px; }
               </widget>
              </item>
              <item>
-              <widget class="Line" name="line">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btnExportImage">
-               <property name="text">
-                <string>导出图片</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="chartSettingsButton">
-               <property name="text">
-                <string>图表设置...</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer">
+              <spacer name="horizontalSpacer_Top">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -398,21 +377,17 @@ QLabel { padding-right: 5px; }
                </property>
               </spacer>
              </item>
-             <item>
-              <widget class="QPushButton" name="fitToDataButton">
-               <property name="text">
-                <string>适应数据范围</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="resetViewButton">
-               <property name="text">
-                <string>重置视图</string>
-               </property>
-              </widget>
-             </item>
             </layout>
+           </item>
+           <item>
+            <widget class="ChartWidget" name="chartWidget" native="true">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -429,7 +404,7 @@ QLabel { padding-right: 5px; }
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="btnExportData">
+            <widget class="QPushButton" name="btnExportDataTab">
              <property name="text">
               <string>导出数据 (.csv)</string>
              </property>
@@ -445,6 +420,14 @@ QLabel { padding-right: 5px; }
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ChartWidget</class>
+   <extends>QWidget</extends>
+   <header>chartwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

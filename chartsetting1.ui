@@ -13,13 +13,116 @@
   <property name="windowTitle">
    <string>图表设置</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">/* =======================================================
+   图表设置弹窗专用样式表 (ChartSetting1)
+   作用：将样式写死，隔离外部影响，强制修复复选框显示问题
+======================================================= */
+
+/* 1. 窗口全局设置：白底黑字 */
+QDialog {
+    background-color: #ffffff;
+    color: #000000;
+    font-family: &quot;Microsoft YaHei&quot;;
+    font-size: 10pt;
+}
+
+/* 2. 复选框核心修复 (CheckBox) */
+QCheckBox {
+    spacing: 5px;
+    color: #000000; /* 文字黑色 */
+    background-color: transparent;
+}
+
+/* 自定义复选框的“框” (Indicator) */
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #888888; /* 灰色边框 */
+    border-radius: 3px;
+    background-color: #ffffff; /* 默认白底 */
+}
+
+/* 鼠标悬停时边框变蓝 */
+QCheckBox::indicator:hover {
+    border: 1px solid #0078d7;
+}
+
+/* 【关键】选中状态：变为实心蓝色方块 */
+/* 由于没有图片资源，使用颜色填充来表示选中，清晰直观 */
+QCheckBox::indicator:checked {
+    background-color: #0078d7;
+    border: 1px solid #0078d7;
+}
+/* 选中状态下的悬停 */
+QCheckBox::indicator:checked:hover {
+    background-color: #005a9e;
+}
+
+
+/* 3. 输入框、数字框、下拉框设置 */
+QLineEdit, QDoubleSpinBox, QComboBox {
+    border: 1px solid #a0a0a0;
+    border-radius: 3px;
+    padding: 2px;
+    background-color: #ffffff;
+    color: #000000;
+    selection-background-color: #0078d7;
+    selection-color: #ffffff;
+}
+/* 禁用状态 */
+QLineEdit:disabled, QDoubleSpinBox:disabled {
+    background-color: #f0f0f0;
+    color: #888888;
+}
+
+/* 4. Tab页面样式 */
+QTabWidget::pane {
+    border: 1px solid #cccccc;
+    background-color: #ffffff;
+}
+QTabBar::tab {
+    background-color: #f0f0f0;
+    color: #000000;
+    border: 1px solid #cccccc;
+    padding: 6px 12px;
+    margin-right: 2px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+QTabBar::tab:selected {
+    background-color: #ffffff; /* 选中页签变白 */
+    border-bottom-color: #ffffff; /* 底部与面板融合 */
+    font-weight: bold;
+}
+
+/* 5. 按钮样式 */
+QPushButton {
+    border: 1px solid #8f8f91;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+    color: #000000;
+    padding: 5px 15px;
+}
+QPushButton:hover {
+    background-color: #e0e0e0;
+}
+QPushButton:pressed {
+    background-color: #d0d0d0;
+}
+/* 默认按钮(如确定)加深颜色 */
+QPushButton:default {
+    border: 1px solid #0078d7;
+    color: #0078d7;
+    font-weight: bold;
+}</string>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
      </property>
-
      <widget class="QWidget" name="tabGeneral">
       <attribute name="title">
        <string>通用设置</string>
@@ -47,7 +150,6 @@
        </item>
       </layout>
      </widget>
-
      <widget class="QWidget" name="tabX">
       <attribute name="title">
        <string>X轴设置</string>
@@ -133,7 +235,6 @@
        </item>
       </layout>
      </widget>
-
      <widget class="QWidget" name="tabY">
       <attribute name="title">
        <string>Y轴设置</string>

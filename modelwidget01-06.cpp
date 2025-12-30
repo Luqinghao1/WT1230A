@@ -1,12 +1,11 @@
 /*
  * ModelWidget01-06.cpp
- * * 包含模型：
- * 1. Model 1: 压裂水平井复合页岩油 - 无限大边界 + 变井储表皮 (对应 MATLAB: mAB=0, CD/S non-zero)
- * 2. Model 2: 压裂水平井复合页岩油 - 无限大边界 + 恒定井储 (对应 MATLAB: mAB=0, CD/S=0)
- * 3. Model 3: 压裂水平井复合页岩油 - 封闭边界 + 变井储表皮 (对应 MATLAB: mAB=K1/I1, CD/S non-zero)
- * 4. Model 4: 压裂水平井复合页岩油 - 封闭边界 + 恒定井储 (对应 MATLAB: mAB=K1/I1, CD/S=0)
- * 5. Model 5: 压裂水平井复合页岩油 - 定压边界 + 变井储表皮 (对应 MATLAB: mAB=-K0/I0, CD/S non-zero)
- * 6. Model 6: 压裂水平井复合页岩油 - 定压边界 + 恒定井储 (对应 MATLAB: mAB=-K0/I0, CD/S=0)
+ * 文件作用: 压裂水平井复合页岩油模型计算实现
+ * 功能描述:
+ * 1. 包含6种不同边界和井储条件组合的页岩油模型。
+ * 2. 实现了 Stehfest 数值反演算法。
+ * 3. 实现了 PWD_composite 核心数学模型计算。
+ * 4. [修改] 使用 ChartWidget 进行绘图展示。
  */
 
 #include "modelwidget01-06.h"
@@ -61,20 +60,16 @@ QString ModelWidget01_06::getModelName() const {
 }
 
 void ModelWidget01_06::initUi() {
-    // 根据模型类型显示/隐藏特定参数
-
-    // 1. 边界条件控制: reD (外边界半径)
-    // 无限大边界 (Model 1, 2) -> 隐藏 reD
+    // 1. 边界条件控制
     if (m_type == Model_1 || m_type == Model_2) {
         ui->label_reD->setVisible(false);
         ui->reDEdit->setVisible(false);
     } else {
-        // 封闭 (3,4) 或 定压 (5,6) -> 显示 reD
         ui->label_reD->setVisible(true);
         ui->reDEdit->setVisible(true);
     }
 
-    // 2. 井筒储存与表皮 (Model 1, 3, 5 有; 2, 4, 6 无)
+    // 2. 井筒储存与表皮
     bool hasStorage = (m_type == Model_1 || m_type == Model_3 || m_type == Model_5);
     ui->label_cD->setVisible(hasStorage);
     ui->cDEdit->setVisible(hasStorage);
@@ -82,61 +77,60 @@ void ModelWidget01_06::initUi() {
     ui->sEdit->setVisible(hasStorage);
 }
 
+// [修改] 初始化图表：改为配置 ChartWidget
 void ModelWidget01_06::initChart() {
-    QVBoxLayout* layout = new QVBoxLayout(ui->chartContainer);
-    layout->setContentsMargins(0,0,0,0);
-    m_plot = new MouseZoom(this);
-    layout->addWidget(m_plot);
+    MouseZoom* plot = ui->chartWidget->getPlot();
 
-    m_plot->setBackground(Qt::white);
-    m_plot->axisRect()->setBackground(Qt::white);
+    plot->setBackground(Qt::white);
+    plot->axisRect()->setBackground(Qt::white);
 
     QSharedPointer<QCPAxisTickerLog> logTicker(new QCPAxisTickerLog);
-    m_plot->xAxis->setScaleType(QCPAxis::stLogarithmic); m_plot->xAxis->setTicker(logTicker);
-    m_plot->yAxis->setScaleType(QCPAxis::stLogarithmic); m_plot->yAxis->setTicker(logTicker);
-    m_plot->xAxis->setNumberFormat("eb"); m_plot->xAxis->setNumberPrecision(0);
-    m_plot->yAxis->setNumberFormat("eb"); m_plot->yAxis->setNumberPrecision(0);
+    plot->xAxis->setScaleType(QCPAxis::stLogarithmic); plot->xAxis->setTicker(logTicker);
+    plot->yAxis->setScaleType(QCPAxis::stLogarithmic); plot->yAxis->setTicker(logTicker);
+    plot->xAxis->setNumberFormat("eb"); plot->xAxis->setNumberPrecision(0);
+    plot->yAxis->setNumberFormat("eb"); plot->yAxis->setNumberPrecision(0);
 
     QFont labelFont("Arial", 12, QFont::Bold);
     QFont tickFont("Arial", 12);
-    m_plot->xAxis->setLabel("时间 Time (h)");
-    m_plot->yAxis->setLabel("压力 & 导数 Pressure & Derivative (MPa)");
-    m_plot->xAxis->setLabelFont(labelFont); m_plot->yAxis->setLabelFont(labelFont);
-    m_plot->xAxis->setTickLabelFont(tickFont); m_plot->yAxis->setTickLabelFont(tickFont);
+    plot->xAxis->setLabel("时间 Time (h)");
+    plot->yAxis->setLabel("压力 & 导数 Pressure & Derivative (MPa)");
+    plot->xAxis->setLabelFont(labelFont); plot->yAxis->setLabelFont(labelFont);
+    plot->xAxis->setTickLabelFont(tickFont); plot->yAxis->setTickLabelFont(tickFont);
 
-    m_plot->xAxis2->setVisible(true); m_plot->yAxis2->setVisible(true);
-    m_plot->xAxis2->setTickLabels(false); m_plot->yAxis2->setTickLabels(false);
-    connect(m_plot->xAxis, SIGNAL(rangeChanged(QCPRange)), m_plot->xAxis2, SLOT(setRange(QCPRange)));
-    connect(m_plot->yAxis, SIGNAL(rangeChanged(QCPRange)), m_plot->yAxis2, SLOT(setRange(QCPRange)));
-    m_plot->xAxis2->setScaleType(QCPAxis::stLogarithmic); m_plot->yAxis2->setScaleType(QCPAxis::stLogarithmic);
-    m_plot->xAxis2->setTicker(logTicker); m_plot->yAxis2->setTicker(logTicker);
+    plot->xAxis2->setVisible(true); plot->yAxis2->setVisible(true);
+    plot->xAxis2->setTickLabels(false); plot->yAxis2->setTickLabels(false);
+    connect(plot->xAxis, SIGNAL(rangeChanged(QCPRange)), plot->xAxis2, SLOT(setRange(QCPRange)));
+    connect(plot->yAxis, SIGNAL(rangeChanged(QCPRange)), plot->yAxis2, SLOT(setRange(QCPRange)));
+    plot->xAxis2->setScaleType(QCPAxis::stLogarithmic); plot->yAxis2->setScaleType(QCPAxis::stLogarithmic);
+    plot->xAxis2->setTicker(logTicker); plot->yAxis2->setTicker(logTicker);
 
-    m_plot->xAxis->grid()->setVisible(true); m_plot->yAxis->grid()->setVisible(true);
-    m_plot->xAxis->grid()->setSubGridVisible(true); m_plot->yAxis->grid()->setSubGridVisible(true);
-    m_plot->xAxis->grid()->setPen(QPen(QColor(220, 220, 220), 1, Qt::SolidLine));
-    m_plot->yAxis->grid()->setPen(QPen(QColor(220, 220, 220), 1, Qt::SolidLine));
-    m_plot->xAxis->grid()->setSubGridPen(QPen(QColor(240, 240, 240), 1, Qt::DotLine));
-    m_plot->yAxis->grid()->setSubGridPen(QPen(QColor(240, 240, 240), 1, Qt::DotLine));
+    plot->xAxis->grid()->setVisible(true); plot->yAxis->grid()->setVisible(true);
+    plot->xAxis->grid()->setSubGridVisible(true); plot->yAxis->grid()->setSubGridVisible(true);
+    plot->xAxis->grid()->setPen(QPen(QColor(220, 220, 220), 1, Qt::SolidLine));
+    plot->yAxis->grid()->setPen(QPen(QColor(220, 220, 220), 1, Qt::SolidLine));
+    plot->xAxis->grid()->setSubGridPen(QPen(QColor(240, 240, 240), 1, Qt::DotLine));
+    plot->yAxis->grid()->setSubGridPen(QPen(QColor(240, 240, 240), 1, Qt::DotLine));
 
-    m_plot->xAxis->setRange(1e-3, 1e3); m_plot->yAxis->setRange(1e-3, 1e2);
+    plot->xAxis->setRange(1e-3, 1e3); plot->yAxis->setRange(1e-3, 1e2);
 
-    m_plot->plotLayout()->insertRow(0);
-    m_plotTitle = new QCPTextElement(m_plot, "复合页岩油储层试井曲线 - " + getModelName(), QFont("SimHei", 14, QFont::Bold));
-    m_plot->plotLayout()->addElement(0, 0, m_plotTitle);
+    plot->legend->setVisible(true);
+    plot->legend->setFont(QFont("Arial", 9));
+    plot->legend->setBrush(QBrush(QColor(255, 255, 255, 200)));
 
-    m_plot->legend->setVisible(true);
-    m_plot->legend->setFont(QFont("Arial", 9));
-    m_plot->legend->setBrush(QBrush(QColor(255, 255, 255, 200)));
+    ui->chartWidget->setTitle("复合页岩油储层试井曲线 - " + getModelName());
 }
 
+// [修改] 建立信号槽连接
 void ModelWidget01_06::setupConnections() {
     connect(ui->calculateButton, &QPushButton::clicked, this, &ModelWidget01_06::onCalculateClicked);
     connect(ui->resetButton, &QPushButton::clicked, this, &ModelWidget01_06::onResetParameters);
-    connect(ui->btnExportData, &QPushButton::clicked, this, &ModelWidget01_06::onExportData);
-    connect(ui->btnExportImage, &QPushButton::clicked, this, &ModelWidget01_06::onExportImage);
-    connect(ui->resetViewButton, &QPushButton::clicked, this, &ModelWidget01_06::onResetView);
-    connect(ui->fitToDataButton, &QPushButton::clicked, this, &ModelWidget01_06::onFitToData);
-    connect(ui->chartSettingsButton, &QPushButton::clicked, this, &ModelWidget01_06::onChartSettings);
+
+    // 连接 ChartWidget 的导出数据信号
+    connect(ui->chartWidget, &ChartWidget::exportDataTriggered, this, &ModelWidget01_06::onExportData);
+
+    // 连接 Tab 页中的导出数据按钮
+    connect(ui->btnExportDataTab, &QPushButton::clicked, this, &ModelWidget01_06::onExportData);
+
     connect(ui->LEdit, &QLineEdit::editingFinished, this, &ModelWidget01_06::onDependentParamsChanged);
     connect(ui->LfEdit, &QLineEdit::editingFinished, this, &ModelWidget01_06::onDependentParamsChanged);
     connect(ui->checkShowPoints, &QCheckBox::toggled, this, &ModelWidget01_06::onShowPointsToggled);
@@ -187,10 +181,8 @@ void ModelWidget01_06::onResetParameters() {
     setInputText(ui->remda1Edit, 0.001);
     setInputText(ui->gamaDEdit, 0.02);
 
-    // 只有边界模型才需要设置默认 reD
     if (ui->reDEdit->isVisible()) setInputText(ui->reDEdit, 10.0);
 
-    // 只有变井储模型才需要设置 CD, S
     if (ui->cDEdit->isVisible()) {
         setInputText(ui->cDEdit, 0.01);
         setInputText(ui->sEdit, 1.0);
@@ -206,21 +198,13 @@ void ModelWidget01_06::onDependentParamsChanged() {
     else setInputText(ui->LfDEdit, 0.0);
 }
 
-void ModelWidget01_06::onResetView() { m_plot->rescaleAxes(); m_plot->replot(); }
-void ModelWidget01_06::onFitToData() {
-    m_plot->rescaleAxes();
-    if(m_plot->xAxis->range().lower <= 0) m_plot->xAxis->setRangeLower(1e-3);
-    if(m_plot->yAxis->range().lower <= 0) m_plot->yAxis->setRangeLower(1e-3);
-    m_plot->replot();
-}
-void ModelWidget01_06::onChartSettings() { ChartSetting1 dlg(m_plot, m_plotTitle, this); dlg.exec(); }
-
 void ModelWidget01_06::onShowPointsToggled(bool checked) {
-    for(int i = 0; i < m_plot->graphCount(); ++i) {
-        if (checked) m_plot->graph(i)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
-        else m_plot->graph(i)->setScatterStyle(QCPScatterStyle::ssNone);
+    MouseZoom* plot = ui->chartWidget->getPlot();
+    for(int i = 0; i < plot->graphCount(); ++i) {
+        if (checked) plot->graph(i)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
+        else plot->graph(i)->setScatterStyle(QCPScatterStyle::ssNone);
     }
-    m_plot->replot();
+    plot->replot();
 }
 
 void ModelWidget01_06::onCalculateClicked() {
@@ -233,7 +217,8 @@ void ModelWidget01_06::onCalculateClicked() {
 }
 
 void ModelWidget01_06::runCalculation() {
-    m_plot->clearGraphs();
+    MouseZoom* plot = ui->chartWidget->getPlot();
+    plot->clearGraphs();
 
     QMap<QString, QVector<double>> rawParams;
     rawParams["phi"] = parseInput(ui->phiEdit->text());
@@ -256,7 +241,7 @@ void ModelWidget01_06::runCalculation() {
     rawParams["gamaD"] = parseInput(ui->gamaDEdit->text());
 
     if (ui->reDEdit->isVisible()) rawParams["reD"] = parseInput(ui->reDEdit->text());
-    else rawParams["reD"] = {0.0}; // Infinite doesn't use it
+    else rawParams["reD"] = {0.0};
 
     if (ui->cDEdit->isVisible()) {
         rawParams["cD"] = parseInput(ui->cDEdit->text());
@@ -331,21 +316,27 @@ void ModelWidget01_06::runCalculation() {
     }
     ui->resultTextEdit->setText(resultText);
 
-    onFitToData();
+    ui->chartWidget->getPlot()->rescaleAxes();
+    if(plot->xAxis->range().lower <= 0) plot->xAxis->setRangeLower(1e-3);
+    if(plot->yAxis->range().lower <= 0) plot->yAxis->setRangeLower(1e-3);
+    plot->replot();
+
     onShowPointsToggled(ui->checkShowPoints->isChecked());
     emit calculationCompleted(getModelName(), baseParams);
 }
 
 void ModelWidget01_06::plotCurve(const ModelCurveData& data, const QString& name, QColor color, bool isSensitivity) {
+    MouseZoom* plot = ui->chartWidget->getPlot();
+
     const QVector<double>& t = std::get<0>(data);
     const QVector<double>& p = std::get<1>(data);
     const QVector<double>& d = std::get<2>(data);
 
-    QCPGraph* graphP = m_plot->addGraph();
+    QCPGraph* graphP = plot->addGraph();
     graphP->setData(t, p);
     graphP->setPen(QPen(color, 2, Qt::SolidLine));
 
-    QCPGraph* graphD = m_plot->addGraph();
+    QCPGraph* graphD = plot->addGraph();
     graphD->setData(t, d);
 
     if (isSensitivity) {
@@ -379,19 +370,7 @@ void ModelWidget01_06::onExportData() {
     }
 }
 
-void ModelWidget01_06::onExportImage() {
-    QString defaultDir = ModelParameter::instance()->getProjectPath();
-    if(defaultDir.isEmpty()) defaultDir = ".";
-    QString path = QFileDialog::getSaveFileName(this, "导出图表图片", defaultDir + "/ChartImage.png", "PNG Image (*.png);;JPEG Image (*.jpg);;PDF Document (*.pdf)");
-    if (path.isEmpty()) return;
-    bool success = false;
-    if (path.endsWith(".png", Qt::CaseInsensitive)) success = m_plot->savePng(path);
-    else if (path.endsWith(".jpg", Qt::CaseInsensitive)) success = m_plot->saveJpg(path);
-    else if (path.endsWith(".pdf", Qt::CaseInsensitive)) success = m_plot->savePdf(path);
-    else success = m_plot->savePng(path + ".png");
-    if (success) QMessageBox::information(this, "完成", "图表已成功导出。");
-    else QMessageBox::critical(this, "错误", "导出图表失败。");
-}
+// --- 数学逻辑保持不变 ---
 
 ModelCurveData ModelWidget01_06::calculateTheoreticalCurve(const QMap<QString, double>& params, const QVector<double>& providedTime)
 {
@@ -444,7 +423,6 @@ void ModelWidget01_06::calculatePDandDeriv(const QVector<double>& tD, const QMap
     if (N % 2 != 0) N = 4;
     double ln2 = log(2.0);
 
-    // 获取压敏系数 (MATLAB: gamaD)
     double gamaD = params.value("gamaD", 0.0);
 
     for (int k = 0; k < numPoints; ++k) {
@@ -459,7 +437,6 @@ void ModelWidget01_06::calculatePDandDeriv(const QVector<double>& tD, const QMap
         }
         outPD[k] = pd_val * ln2 / t;
 
-        // 摄动法考虑压敏效应 (对应 MATLAB: -1/gamaD * log(1-gamaD*PD))
         if (std::abs(gamaD) > 1e-9) {
             double arg = 1.0 - gamaD * outPD[k];
             if (arg > 1e-12) {
@@ -476,7 +453,7 @@ double ModelWidget01_06::flaplace_composite(double z, const QMap<QString, double
     double km = p.value("km");
     double LfD = p.value("LfD");
     double rmD = p.value("rmD");
-    double reD = p.value("reD", 0.0); // 默认0表示无限大(如果未设置)
+    double reD = p.value("reD", 0.0);
     double omga1 = p.value("omega1");
     double omga2 = p.value("omega2");
     double remda1 = p.value("lambda1");
@@ -491,11 +468,8 @@ double ModelWidget01_06::flaplace_composite(double z, const QMap<QString, double
     double fs1 = omga1 + remda1 * temp / (remda1 + z * temp);
     double fs2 = M12 * temp;
 
-    // 调用通用 PWD 计算内核，内部包含边界判断逻辑
     double pf = PWD_composite(z, fs1, fs2, M12, LfD, rmD, reD, nf, xwD, m_type);
 
-    // 考虑井筒储存和表皮 (对应 MATLAB: (z*pf+S)/(z+CD*z^2*(z*pf+S)))
-    // 仅对变井储模型 (1, 3, 5) 启用
     bool hasStorage = (m_type == Model_1 || m_type == Model_3 || m_type == Model_5);
     if (hasStorage) {
         double CD = p.value("cD", 0.0);
@@ -516,17 +490,10 @@ double ModelWidget01_06::PWD_composite(double z, double fs1, double fs2, double 
     double arg_g2_rm = gama2 * rmD;
     double arg_g1_rm = gama1 * rmD;
 
-    // 使用缩放贝塞尔函数以避免数值溢出
     double k0_g2 = cyl_bessel_k(0, arg_g2_rm);
     double k1_g2 = cyl_bessel_k(1, arg_g2_rm);
     double k0_g1 = cyl_bessel_k(0, arg_g1_rm);
     double k1_g1 = cyl_bessel_k(1, arg_g1_rm);
-
-    // --- 边界条件因子计算 mAB ---
-    // MATLAB 对应关系:
-    // Infinite: mAB = 0
-    // Closed:   mAB = K1(re)/I1(re)
-    // ConstP:   mAB = -K0(re)/I0(re)
 
     double term_mAB_i0 = 0.0;
     double term_mAB_i1 = 0.0;
@@ -545,15 +512,11 @@ double ModelWidget01_06::PWD_composite(double z, double fs1, double fs2, double 
         double i1_g2_s = scaled_besseli(1, arg_g2_rm);
 
         if (isClosed) {
-            // 封闭边界: ratio based on K1/I1
             if (i1_re_s > 1e-100) {
-                // 计算 mAB * I0(g2*rmD) 和 mAB * I1(g2*rmD)
-                // 引入 exp(arg_g2_rm - arg_re) 来处理指数项的缩放
                 term_mAB_i0 = (k1_re / i1_re_s) * i0_g2_s * std::exp(arg_g2_rm - arg_re);
                 term_mAB_i1 = (k1_re / i1_re_s) * i1_g2_s * std::exp(arg_g2_rm - arg_re);
             }
         } else if (isConstP) {
-            // 定压边界: ratio based on -K0/I0
             if (i0_re_s > 1e-100) {
                 term_mAB_i0 = -(k0_re / i0_re_s) * i0_g2_s * std::exp(arg_g2_rm - arg_re);
                 term_mAB_i1 = -(k0_re / i0_re_s) * i1_g2_s * std::exp(arg_g2_rm - arg_re);
@@ -561,26 +524,20 @@ double ModelWidget01_06::PWD_composite(double z, double fs1, double fs2, double 
         }
     }
 
-    // MATLAB: Acup = M12*gama1*K1(g1)*(mAB*I0(g2)+K0(g2)) + gama2*K0(g1)*(mAB*I1(g2)-K1(g2))
-    double term1 = term_mAB_i0 + k0_g2; // (mAB*I0 + K0)
-    double term2 = term_mAB_i1 - k1_g2; // (mAB*I1 - K1)
+    double term1 = term_mAB_i0 + k0_g2;
+    double term2 = term_mAB_i1 - k1_g2;
 
     double Acup = M12 * gama1 * k1_g1 * term1 + gama2 * k0_g1 * term2;
 
     double i1_g1_s = scaled_besseli(1, arg_g1_rm);
     double i0_g1_s = scaled_besseli(0, arg_g1_rm);
 
-    // MATLAB: Acdown = M12*gama1*I1(g1)*(...) - gama2*I0(g1)*(...)
-    // 我们这里计算 scaled 版本 Acdown * exp(-arg_g1_rm)
     double Acdown_scaled = M12 * gama1 * i1_g1_s * term1 - gama2 * i0_g1_s * term2;
 
     if (std::abs(Acdown_scaled) < 1e-100) Acdown_scaled = 1e-100;
 
-    // Ac = Acup / Acdown
-    // Ac_prefactor = Acup / Acdown_scaled = Ac * exp(arg_g1_rm)
     double Ac_prefactor = Acup / Acdown_scaled;
 
-    // 求解线性方程组
     int size = nf + 1;
     Eigen::MatrixXd A_mat(size, size);
     Eigen::VectorXd b_vec(size);
@@ -588,14 +545,10 @@ double ModelWidget01_06::PWD_composite(double z, double fs1, double fs2, double 
 
     for (int i = 0; i < nf; ++i) {
         for (int j = 0; j < nf; ++j) {
-            // 积分核函数: K0 + Ac*I0
             auto integrand = [&](double a) -> double {
                 double dist = std::sqrt(std::pow(xwD[i] - xwD[j] - a, 2) + std::pow(ywD[i] - ywD[j], 2));
                 double arg_dist = gama1 * dist; if (arg_dist < 1e-10) arg_dist = 1e-10;
 
-                // 计算 Ac * I0(g1*dist)
-                // = (Ac_prefactor * exp(-arg_g1_rm)) * (scaled_I0 * exp(arg_dist))
-                // = Ac_prefactor * scaled_I0 * exp(arg_dist - arg_g1_rm)
                 double term2 = 0.0;
                 double exponent = arg_dist - arg_g1_rm;
                 if (exponent > -700.0) {
@@ -607,7 +560,6 @@ double ModelWidget01_06::PWD_composite(double z, double fs1, double fs2, double 
             A_mat(i, j) = z * val / (M12 * z * 2 * LfD);
         }
     }
-    // 流量条件
     for (int i = 0; i < nf; ++i) { A_mat(i, nf) = -1.0; A_mat(nf, i) = z; }
     A_mat(nf, nf) = 0.0;
 

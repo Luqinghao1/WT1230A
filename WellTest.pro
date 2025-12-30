@@ -29,6 +29,7 @@ win32: LIBS += -lm
 HEADERS += dataeditorwidget.h \
            chartsetting1.h \
            chartsetting2.h \
+           chartwidget.h \
            datacalculate.h \
            datacolumndialog.h \
            dataimportdialog.h \
@@ -63,6 +64,7 @@ HEADERS += dataeditorwidget.h \
 FORMS += dataeditorwidget.ui \
          chartsetting1.ui \
          chartsetting2.ui \
+         chartwidget.ui \
          datacolumndialog.ui \
          dataimportdialog.ui \
          fittingdatadialog.ui \
@@ -89,6 +91,7 @@ FORMS += dataeditorwidget.ui \
 SOURCES += \
            chartsetting1.cpp \
            chartsetting2.cpp \
+           chartwidget.cpp \
            datacalculate.cpp \
            datacolumndialog.cpp \
            dataeditorwidget.cpp \
