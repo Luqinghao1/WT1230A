@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WT_PlottingWidget</class>
+ <widget class="QWidget" name="WT_PlottingWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>图表分析</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* 全局样式：白底黑字 */
+QWidget {
+        background-color: white;
+        color: black;
+        font-family: &quot;Microsoft YaHei&quot;;
+}
+/* 按钮样式 */
+QPushButton {
+        color: black;
+        background-color: #f0f0f0;
+        border: 1px solid #555;
+        border-radius: 3px;
+        padding: 5px;
+}
+QPushButton:hover {
+        background-color: #e0e0e0;
+}
+/* 列表样式 */
+QListWidget {
+        border: 1px solid #555;
+        color: black;
+        background-color: white;
+}
+QListWidget::item:selected {
+        background-color: #e0e0e0;
+        color: black;
+}
+/* 复选框样式：美化选中状态 */
+QCheckBox {
+        color: black;
+        spacing: 5px;
+}
+QCheckBox::indicator {
+        width: 16px;
+        height: 16px;
+        border: 1px solid #555;
+        border-radius: 3px;
+        background: white;
+}
+QCheckBox::indicator:checked {
+        background-color: #0078d7;
+        border: 1px solid #0078d7;
+}
+/* 分割线样式 */
+QSplitter::handle {
+        background-color: #ccc;
+}
+</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_Main">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="QWidget" name="leftContainer" native="true">
+      <property name="maximumSize">
+       <size>
+        <width>280</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_Left">
+       <item>
+        <widget class="QLabel" name="label_Tools">
+         <property name="text">
+          <string>工具箱</string>
+         </property>
+         <property name="styleSheet">
+          <string>font-weight: bold; background-color: #eee; padding: 5px; border: 1px solid #ddd; color: black;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_NewCurve">
+         <property name="text">
+          <string>新建曲线</string>
+         </property>
+         <property name="minimumHeight">
+          <number>35</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_PressureRate">
+         <property name="text">
+          <string>压力产量分析</string>
+         </property>
+         <property name="minimumHeight">
+          <number>35</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_Derivative">
+         <property name="text">
+          <string>压力导数曲线</string>
+         </property>
+         <property name="minimumHeight">
+          <number>35</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_Save">
+         <property name="text">
+          <string>保存项目绘图</string>
+         </property>
+         <property name="minimumHeight">
+          <number>35</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_List">
+         <property name="text">
+          <string>曲线列表</string>
+         </property>
+         <property name="styleSheet">
+          <string>font-weight: bold; margin-top: 15px; color: black;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="listWidget_Curves"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_ListBtns">
+         <item>
+          <widget class="QPushButton" name="btn_Manage">
+           <property name="text">
+            <string>管理</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_Delete">
+           <property name="text">
+            <string>删除</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="rightContainer" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout_Right">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="MouseZoom" name="customPlot" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_PlotTools">
+         <property name="leftMargin">
+          <number>10</number>
+         </property>
+         <property name="topMargin">
+          <number>5</number>
+         </property>
+         <property name="rightMargin">
+          <number>10</number>
+         </property>
+         <property name="bottomMargin">
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QCheckBox" name="check_ShowLines">
+           <property name="text">
+            <string>连接数据点</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_ExportImg">
+           <property name="text">
+            <string>导出图片</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_ChartSettings">
+           <property name="text">
+            <string>图表设置...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_ExportData">
+           <property name="text">
+            <string>导出数据</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btn_FitToData">
+           <property name="text">
+            <string>适应数据范围</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MouseZoom</class>
+   <extends>QWidget</extends>
+   <header>mousezoom.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

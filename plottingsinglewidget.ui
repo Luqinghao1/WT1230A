@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PlottingSingleWidget</class>
+ <widget class="QWidget" name="PlottingSingleWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>850</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>图表详情</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* 全局设置：强制白底黑字 */
+QWidget {
+    color: black;
+    background-color: white;
+    font-family: &quot;Microsoft YaHei&quot;;
+}
+QPushButton {
+    color: black;
+    background-color: #f0f0f0;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 5px;
+}
+QPushButton:hover {
+    background-color: #e0e0e0;
+}
+QCheckBox {
+    color: black;
+}
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: white;
+}
+QCheckBox::indicator:checked {
+    background-color: #0078d7;
+    border: 1px solid #0078d7;
+}
+</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="MouseZoom" name="customPlot" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QCheckBox" name="check_ShowLines">
+       <property name="text">
+        <string>连接数据点</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_ExportImg">
+       <property name="text">
+        <string>导出图片</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_ChartSettings">
+       <property name="text">
+        <string>图表设置...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_ExportData">
+       <property name="text">
+        <string>导出数据</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_FitToData">
+       <property name="text">
+        <string>适应数据范围</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MouseZoom</class>
+   <extends>QWidget</extends>
+   <header>mousezoom.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
